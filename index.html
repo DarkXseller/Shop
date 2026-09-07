@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DARK X SELLER</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  min-height:100vh;
+  font-family:Arial,sans-serif;
+  color:white;
+  background:#050505 url("background.png") center/cover fixed no-repeat;
+}
+.overlay{
+  min-height:100vh;
+  background:rgba(0,0,0,.58);
+  padding:25px 14px;
+}
+.box{
+  width:100%;
+  max-width:430px;
+  margin:auto;
+  background:rgba(10,10,10,.86);
+  border:1px solid #ff2525;
+  border-radius:18px;
+  padding:20px;
+  box-shadow:0 0 25px rgba(255,0,0,.25);
+}
+h1{
+  text-align:center;
+  color:#ff2525;
+  margin:5px 0 20px;
+}
+input{
+  width:100%;
+  padding:14px;
+  border-radius:10px;
+  border:1px solid #555;
+  background:#111;
+  color:white;
+  outline:none;
+  margin-bottom:12px;
+}
+button{
+  width:100%;
+  padding:13px;
+  border:0;
+  border-radius:10px;
+  background:linear-gradient(145deg,#ff3030,#8b0000);
+  color:white;
+  font-weight:900;
+  cursor:pointer;
+  margin-top:8px;
+  box-shadow:0 4px 12px rgba(255,0,0,.25);
+}
+button:active{transform:scale(.98)}
+.hidden{display:none}
+.category{
+  margin-top:18px;
+  font-size:18px;
+  font-weight:bold;
+  color:#ff3030;
+}
+.option{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-top:9px;
+  padding:11px;
+  border:1px solid #333;
+  border-radius:10px;
+  background:#111;
+}
+.option-name{font-weight:bold}
+.price{
+  flex-shrink:0;
+  color:#ff3030;
+  font-weight:900;
+  white-space:nowrap;
+  margin-left:auto;
+}
+.paybox{text-align:center}
+.paybox img{
+  width:230px;
+  max-width:100%;
+  margin:15px auto;
+  border-radius:10px;
+  background:white;
+  padding:8px;
+}
+.error{
+  color:#ff4444;
+  text-align:center;
+  margin-top:10px;
+}
+.success{
+  color:#39ff88;
+  text-align:center;
+  margin-top:12px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="overlay">
+
+<!-- LOGIN -->
+<div class="box" id="loginPage">
+
+  <h1>DARK X SELLER</h1>
+
+  <input
+    id="accessKey"
+    placeholder="Enter Access Key"
+    autocomplete="off"
+  >
+
+  <button onclick="login()">LOGIN</button>
+
+  <div class="error" id="loginError"></div>
+
+</div>
+
+
+<!-- DASHBOARD -->
+<div class="box hidden" id="dashboard">
+
+  <h1>DARK X SELLER</h1>
+
+  <div class="category">FF SERVICE</div>
+
+  <div class="option">
+    <span class="option-name">Seller Service</span>
+    <button onclick="buy('Seller Service','Contact')">
+      CONTACT
+    </button>
+  </div>
+
+  <div class="option">
+    <span class="option-name">FF Like Plan</span>
+    <button onclick="showLikePlans()">OPEN</button>
+  </div>
+
+  <div class="option">
+    <span class="option-name">Panels Android</span>
+    <button onclick="showAndroid()">OPEN</button>
+  </div>
+
+  <div class="option">
+    <span class="option-name">Panels iOS</span>
+    <button onclick="showIOS()">OPEN</button>
+  </div>
+
+
+  <div class="category">
+    REFERRAL PROGRAM BOT TRICK
+  </div>
+
+  <div class="option">
+    <span class="option-name">Telegram Bot Refer</span>
+    <button onclick="buy('Telegram Bot Refer','99')">
+      ₹99
+    </button>
+  </div>
+
+  <div class="option">
+    <span class="option-name">Other Apps Refer Task</span>
+    <button onclick="buy('Other Apps Refer Task','199')">
+      ₹199
+    </button>
+  </div>
+
+
+  <div class="category">
+    INSTAGRAM SERVICE
+  </div>
+
+  <div id="instaPlans"></div>
+
+  <button onclick="logout()">LOGOUT</button>
+
+</div>
+
+
+<!-- PLANS -->
+<div class="box hidden" id="plansPage">
+
+  <h1 id="plansTitle">PLANS</h1>
+
+  <div id="plans"></div>
+
+  <button onclick="backDashboard()">BACK</button>
+
+</div>
+
+
+<!-- PAYMENT -->
+<div class="box hidden paybox" id="paymentPage">
+
+  <h1>PAYMENT</h1>
+
+  <h3 id="selectedPlan"></h3>
+
+  <h2 id="selectedPrice"></h2>
+
+  <!-- YOUR QR IMAGE -->
+  <img src="qr.png" alt="Payment QR">
+
+  <button onclick="paymentSuccessful()">
+    PAYMENT SUCCESSFUL
+  </button>
+
+  <button onclick="backPlans()">
+    BACK
+  </button>
+
+  <div class="success" id="paymentMessage"></div>
+
+</div>
+
+</div>
+
+
+<!-- BACKGROUND MUSIC -->
+<audio id="bgMusic" loop preload="auto">
+  <source src="song.mp3" type="audio/mpeg">
+</audio>
+
+
+<script type="module">
+
+/* Firebase */
+
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+
+import {
+  getDatabase,
+  ref,
+  get
+}
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+
+
+/* Firebase config */
+
+const firebaseConfig = {
+  databaseURL:
+  "https://admin-panel-86f08-default-rtdb.firebaseio.com/"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+
+/* MUSIC */
+
+const bgMusic =
+  document.getElementById("bgMusic");
+
+bgMusic.volume = 0.7;
+
+function startMusic(){
+
+  bgMusic.play().catch(function(error){
+
+    console.log(
+      "Music could not start:",
+      error
+    );
+
+  });
+
+}
+
+
+/* LOGIN */
+
+window.login = async function(){
+
+  const key =
+    document
+      .getElementById("accessKey")
+      .value
+      .trim();
+
+  const error =
+    document.getElementById("loginError");
+
+  error.textContent = "";
+
+  if(!key){
+
+    error.textContent =
+      "Please enter Access Key";
+
+    return;
+  }
+
+
+  /* LOGIN button click starts music */
+
+  startMusic();
+
+
+  try{
+
+    const snapshot =
+      await get(
+        ref(db,"accessKeys")
+      );
+
+
+    if(!snapshot.exists()){
+
+      error.textContent =
+        "Access Key database not found.";
+
+      return;
+    }
+
+
+    const data =
+      snapshot.val();
+
+    let valid = false;
+
+
+    for(const id in data){
+
+      const item = data[id];
+
+      if(
+        item &&
+        item.key === key &&
+        item.active === true
+      ){
+
+        valid = true;
+        break;
+
+      }
+
+    }
+
+
+    if(valid){
+
+      document
+        .getElementById("loginPage")
+        .classList
+        .add("hidden");
+
+      document
+        .getElementById("dashboard")
+        .classList
+        .remove("hidden");
+
+      localStorage.setItem(
+        "darkSellerKey",
+        key
+      );
+
+    }else{
+
+      error.textContent =
+        "Invalid or inactive Access Key.";
+
+    }
+
+  }catch(err){
+
+    console.error(err);
+
+    error.textContent =
+      "Firebase connection error.";
+
+  }
+
+};
+
+
+/* BUY */
+
+window.buy = function(name,price){
+
+  document
+    .getElementById("dashboard")
+    .classList
+    .add("hidden");
+
+  document
+    .getElementById("paymentPage")
+    .classList
+    .remove("hidden");
+
+
+  document
+    .getElementById("selectedPlan")
+    .textContent = name;
+
+
+  document
+    .getElementById("selectedPrice")
+    .textContent =
+      price === "Contact"
+      ? "Contact Admin"
+      : "₹" + price;
+
+
+  document
+    .getElementById("paymentMessage")
+    .textContent = "";
+
+};
+
+
+/* FF LIKE */
+
+window.showLikePlans = function(){
+
+  showPlans(
+    "FF LIKE PLAN",
+    [
+      ["1 Day — 200 Like","49"],
+      ["7 Days — 3K Like","149"]
+    ]
+  );
+
+};
+
+
+/* ANDROID */
+
+window.showAndroid = function(){
+
+  showPlans(
+    "PANELS ANDROID",
+    [
+      ["Drip Client — 1 Day","89"],
+      ["Silent Cheats — 3 Days","199"],
+      ["Aim Hack — 7 Days","349"],
+      ["Prime Hook","89"],
+      ["Pato Team","199"],
+      ["Xrenge","349"]
+    ]
+  );
+
+};
+
+
+/* IOS */
+
+window.showIOS = function(){
+
+  showPlans(
+    "PANELS iOS",
+    [
+      ["Migul Pro — 1 Day","250"],
+      ["Migul Basic — 3 Days","450"],
+      ["iOS Fluoride Monite — 7 Days","750"],
+      ["iOS Fluoride Monite — 30 Days","2000"]
+    ]
+  );
+
+};
+
+
+/* PLAN DISPLAY */
+
+function showPlans(title,items){
+
+  document
+    .getElementById("dashboard")
+    .classList
+    .add("hidden");
+
+  document
+    .getElementById("plansPage")
+    .classList
+    .remove("hidden");
+
+
+  document
+    .getElementById("plansTitle")
+    .textContent = title;
+
+
+  const plans =
+    document.getElementById("plans");
+
+  plans.innerHTML = "";
+
+
+  items.forEach(item => {
+
+    const div =
+      document.createElement("div");
+
+    div.className = "option";
+
+
+    div.innerHTML = `
+      <span class="option-name">
+        ${item[0]}
+      </span>
+
+      <span class="price">
+        ₹${item[1]}
+      </span>
+    `;
+
+
+    div.style.cursor = "pointer";
+
+
+    div.onclick = () =>
+      buy(item[0],item[1]);
+
+
+    plans.appendChild(div);
+
+  });
+
+}
+
+
+/* INSTAGRAM */
+
+const instaPrices = [
+  ["1K","49"],
+  ["2K","89"],
+  ["3K","159"],
+  ["4K","199"],
+  ["5K","239"],
+  ["6K","279"],
+  ["7K","329"],
+  ["8K","369"],
+  ["9K","419"],
+  ["10K","449"]
+];
+
+
+const instaBox =
+  document.getElementById("instaPlans");
+
+
+instaPrices.forEach(item => {
+
+  const div =
+    document.createElement("div");
+
+  div.className = "option";
+
+
+  div.innerHTML = `
+    <span class="option-name">
+      Insta Followers ${item[0]}
+    </span>
+
+    <span class="price">
+      ₹${item[1]}
+    </span>
+  `;
+
+
+  div.style.cursor = "pointer";
+
+
+  div.onclick = () =>
+    buy(
+      "Insta Followers " + item[0],
+      item[1]
+    );
+
+
+  instaBox.appendChild(div);
+
+});
+
+
+/* BACK */
+
+window.backDashboard = function(){
+
+  document
+    .getElementById("plansPage")
+    .classList
+    .add("hidden");
+
+  document
+    .getElementById("dashboard")
+    .classList
+    .remove("hidden");
+
+};
+
+
+window.backPlans = function(){
+
+  document
+    .getElementById("paymentPage")
+    .classList
+    .add("hidden");
+
+  document
+    .getElementById("plansPage")
+    .classList
+    .remove("hidden");
+
+};
+
+
+/* PAYMENT SUCCESSFUL BUTTON */
+
+window.paymentSuccessful = function(){
+
+  document
+    .getElementById("paymentMessage")
+    .textContent =
+      "Payment Successful button clicked.";
+
+};
+
+
+/* LOGOUT */
+
+window.logout = function(){
+
+  localStorage.removeItem(
+    "darkSellerKey"
+  );
+
+  location.reload();
+
+};
+
+
+/* AUTO LOGIN */
+
+window.addEventListener(
+  "DOMContentLoaded",
+  function(){
+
+    const savedKey =
+      localStorage.getItem(
+        "darkSellerKey"
+      );
+
+
+    if(savedKey){
+
+      document
+        .getElementById("loginPage")
+        .classList
+        .add("hidden");
+
+      document
+        .getElementById("dashboard")
+        .classList
+        .remove("hidden");
+
+    }
+
+  }
+);
+
+</script>
+
+</body>
+</html>
