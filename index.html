@@ -208,7 +208,6 @@ button:active{transform:scale(.98)}
 
   <h2 id="selectedPrice"></h2>
 
-  <!-- YOUR QR IMAGE -->
   <img src="qr.png" alt="Payment QR">
 
   <button onclick="paymentSuccessful()">
@@ -234,7 +233,9 @@ button:active{transform:scale(.98)}
 
 <script type="module">
 
-/* Firebase */
+/* =========================
+   FIREBASE
+========================= */
 
 import { initializeApp }
 from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
@@ -247,7 +248,9 @@ import {
 from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
 
 
-/* Firebase config */
+/* =========================
+   FIREBASE CONFIG
+========================= */
 
 const firebaseConfig = {
   databaseURL:
@@ -258,7 +261,9 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
 
-/* MUSIC */
+/* =========================
+   MUSIC
+========================= */
 
 const bgMusic =
   document.getElementById("bgMusic");
@@ -279,7 +284,161 @@ function startMusic(){
 }
 
 
-/* LOGIN */
+/* =========================
+   ACCESS KEY CHECK
+========================= */
+
+function checkAccessKey(data, enteredKey){
+
+  if(!data){
+    return false;
+  }
+
+  const key =
+    String(enteredKey || "").trim();
+
+  /*
+    FORMAT 1
+
+    keys
+      KEY123: true
+  */
+
+  if(
+    Object.prototype.hasOwnProperty.call(data,key)
+  ){
+
+    const value = data[key];
+
+    if(value === true){
+      return true;
+    }
+
+    if(value === "true"){
+      return true;
+    }
+
+    if(value === 1){
+      return true;
+    }
+
+    if(
+      value &&
+      typeof value === "object"
+    ){
+
+      if(
+        value.active === true ||
+        value.active === "true" ||
+        value.active === 1
+      ){
+        return true;
+      }
+
+      if(
+        value.key &&
+        String(value.key).trim() === key
+      ){
+
+        if(
+          value.active === undefined ||
+          value.active === true ||
+          value.active === "true" ||
+          value.active === 1
+        ){
+          return true;
+        }
+
+      }
+
+    }
+
+  }
+
+
+  /*
+    FORMAT 2
+
+    keys
+      ID123
+        key: KEY123
+        active: true
+  */
+
+  for(const id in data){
+
+    const item = data[id];
+
+    if(
+      !item ||
+      typeof item !== "object"
+    ){
+      continue;
+    }
+
+
+    if(
+      item.key &&
+      String(item.key).trim() === key
+    ){
+
+      if(
+        item.active === true ||
+        item.active === "true" ||
+        item.active === 1
+      ){
+        return true;
+      }
+
+    }
+
+
+    /*
+      Extra support if Admin Panel
+      stores access key as "keys"
+      inside each record.
+    */
+
+    if(
+      item.keys &&
+      typeof item.keys === "object"
+    ){
+
+      const nestedKeys = item.keys;
+
+      if(
+        Object.prototype.hasOwnProperty.call(
+          nestedKeys,
+          key
+        )
+      ){
+
+        const nestedValue =
+          nestedKeys[key];
+
+        if(
+          nestedValue === true ||
+          nestedValue === "true" ||
+          nestedValue === 1
+        ){
+          return true;
+        }
+
+      }
+
+    }
+
+  }
+
+
+  return false;
+
+}
+
+
+/* =========================
+   LOGIN
+========================= */
 
 window.login = async function(){
 
@@ -303,16 +462,22 @@ window.login = async function(){
   }
 
 
-  /* LOGIN button click starts music */
+  /* Login button starts music */
 
   startMusic();
 
 
   try{
 
+    /*
+      IMPORTANT:
+      Firebase database node is "keys",
+      not "accessKeys".
+    */
+
     const snapshot =
       await get(
-        ref(db,"accessKeys")
+        ref(db,"keys")
       );
 
 
@@ -328,25 +493,12 @@ window.login = async function(){
     const data =
       snapshot.val();
 
-    let valid = false;
 
-
-    for(const id in data){
-
-      const item = data[id];
-
-      if(
-        item &&
-        item.key === key &&
-        item.active === true
-      ){
-
-        valid = true;
-        break;
-
-      }
-
-    }
+    const valid =
+      checkAccessKey(
+        data,
+        key
+      );
 
 
     if(valid){
@@ -375,7 +527,10 @@ window.login = async function(){
 
   }catch(err){
 
-    console.error(err);
+    console.error(
+      "Firebase Login Error:",
+      err
+    );
 
     error.textContent =
       "Firebase connection error.";
@@ -385,7 +540,9 @@ window.login = async function(){
 };
 
 
-/* BUY */
+/* =========================
+   BUY
+========================= */
 
 window.buy = function(name,price){
 
@@ -420,7 +577,9 @@ window.buy = function(name,price){
 };
 
 
-/* FF LIKE */
+/* =========================
+   FF LIKE
+========================= */
 
 window.showLikePlans = function(){
 
@@ -435,7 +594,9 @@ window.showLikePlans = function(){
 };
 
 
-/* ANDROID */
+/* =========================
+   ANDROID
+========================= */
 
 window.showAndroid = function(){
 
@@ -454,7 +615,9 @@ window.showAndroid = function(){
 };
 
 
-/* IOS */
+/* =========================
+   IOS
+========================= */
 
 window.showIOS = function(){
 
@@ -471,7 +634,9 @@ window.showIOS = function(){
 };
 
 
-/* PLAN DISPLAY */
+/* =========================
+   PLAN DISPLAY
+========================= */
 
 function showPlans(title,items){
 
@@ -530,7 +695,9 @@ function showPlans(title,items){
 }
 
 
-/* INSTAGRAM */
+/* =========================
+   INSTAGRAM
+========================= */
 
 const instaPrices = [
   ["1K","49"],
@@ -584,7 +751,9 @@ instaPrices.forEach(item => {
 });
 
 
-/* BACK */
+/* =========================
+   BACK
+========================= */
 
 window.backDashboard = function(){
 
@@ -616,7 +785,9 @@ window.backPlans = function(){
 };
 
 
-/* PAYMENT SUCCESSFUL BUTTON */
+/* =========================
+   PAYMENT SUCCESSFUL
+========================= */
 
 window.paymentSuccessful = function(){
 
@@ -628,7 +799,9 @@ window.paymentSuccessful = function(){
 };
 
 
-/* LOGOUT */
+/* =========================
+   LOGOUT
+========================= */
 
 window.logout = function(){
 
@@ -641,7 +814,9 @@ window.logout = function(){
 };
 
 
-/* AUTO LOGIN */
+/* =========================
+   AUTO LOGIN
+========================= */
 
 window.addEventListener(
   "DOMContentLoaded",
